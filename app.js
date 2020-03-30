@@ -20,18 +20,22 @@ app.get("/", function (req, res) {
 });
 
 app.get('/practice', (req, res) => {
-    var uuid = req.params.uuid;
-    if (!(uuid in users)) {
-        users[uuid] = {
-            "passwords": [],
-            "testOrder": generateTestOrder()
+    var uuid = req.query.uuid;
+    if (uuid === undefined) {
+        res.sendFile("restart.html", { root: ROOT });
+    } else {
+        if (!(uuid in users)) {
+            users[uuid] = {
+                "passwords": [],
+                "testOrder": generateTestOrder()
+            }
         }
+        res.sendFile("practice.html", { root: ROOT })
     }
-    res.sendFile("practice.html", { root: ROOT })
 });
 
 app.get('/practice/next', (req, res) => {
-    var uuid = req.params.uuid;
+    var uuid = req.query.uuid;
     if (!(uuid in users)) {
         res.sendFile("restart.html", { root: ROOT });
     } else {
@@ -41,13 +45,22 @@ app.get('/practice/next', (req, res) => {
             users[uuid].passwords.push(newPassword);
             res.send(newPassword);
         } else {
-            res.sendFile("test.html", { root: ROOT });
+            res.send({ "readyToTest": true});
         }
     }
 });
 
+app.get('/test', (req, res) => {
+    var uuid = req.query.uuid;
+    if (!(uuid in users)) {
+        res.sendFile("restart.html", { root: ROOT });
+    } else {
+        res.sendFile("test.html", { root: ROOT });
+    }
+});
+
 app.get('/test/next', (req, res) => {
-    var uuid = req.params.uuid;
+    var uuid = req.query.uuid;
     if (!(uuid in users)) {
         res.sendFile("restart.html", { root: ROOT });
     } else if (users[uuid].passwords.length < 3) {
@@ -64,15 +77,19 @@ app.get('/test/next', (req, res) => {
 });
 
 app.get('/test/verify', (req, res) => {
-    var uuid = req.params.uuid;
+    var uuid = req.query.uuid;
     if (!(uuid in users)) {
         res.sendFile("restart.html", { root: ROOT });
     } else {
-        var attempt = req.params.attempt;
+        var attempt = req.query.attempt;
         //TODO: check if attempt matches password
         var matches = false;
         res.send({ "matches": matches});
     }
+});
+
+app.get('/users', (req, res) => {
+    res.send(users);
 });
 
 app.use(express.static(ROOT));
