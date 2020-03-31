@@ -3,27 +3,30 @@
 <head>
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
-	<title>New Authentication Scheme</title>
+	<title>Start - COMP3008 Password Scheme</title>
 </head>
 <body>
-    <div>
-		<h3>Click start to begin testing the new password scheme</h3>
-		<button style="margin-left:20px" class="btn btn-primary btn-lg" onclick="start()">Start</button>
+    <div class="container" style="margin-top: 50px">
+        <h1>Welcome!</h1>
+        <hr />
+        <p>Thanks for helping us try out a brand new style of password scheme. When you hit Start, you'll be present with three random passwords, one at a time. Memorize them as best you can! You'll get the chance to practice entering each one before moving to the next one.</p>
+        <p>Once you've memorized your passwords, you'll be asked to enter them one at a time, in a random order. You'll get three tries to enter each one.</p>
+        <p>And that's it! Press <span style="color: blue">Start</span> whenever you're ready to begin.</p>
+		<button class="btn btn-primary btn-lg" onclick="start()">Start</button>
     </div>
 
 	<script>
 		function start() {
 			var uuid = new Date().getTime().toString();
-			uuid += "-" + Math.floor(Math.random()*1000)
+            uuid += "-" + Math.floor(Math.random() * 1000)
             document.cookie = "uuid=" + uuid + "; path=/; max-age=7200";
-
 			window.location.href = "/practice";
 		}
 	</script>
 
-	<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 </body>

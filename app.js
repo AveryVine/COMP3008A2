@@ -26,7 +26,7 @@ app.get("/", function (req, res) {
 app.get('/practice', (req, res) => {
     var uuid = req.cookies.uuid;
     if (uuid === undefined) {
-        res.send({ "restart": true });
+        res.sendFile("index.html", { root: ROOT })
     } else {
         if (!(uuid in users)) {
             users[uuid] = {
@@ -79,7 +79,7 @@ app.get('/practice/verify', (req, res) => {
 app.get('/test', (req, res) => {
     var uuid = req.cookies.uuid;
     if (!(uuid in users)) {
-        res.send({ "restart": true });
+        res.sendFile("index.html", { root: ROOT })
     } else {
         res.sendFile("test.html", { root: ROOT });
     }
@@ -100,7 +100,7 @@ app.get('/test/next', (req, res) => {
             var passwordTitle = users[uuid].passwords[passwordIndex].title;
             res.send({ "title" : passwordTitle });
         } else {
-            res.sendFile("thanks.html", { root: ROOT })
+            res.send({ "finished": true });
         }
     }
 });
@@ -110,19 +110,31 @@ app.get('/test/verify', (req, res) => {
     if (!(uuid in users)) {
         res.send({ "restart": true });
     } else {
-        var passwordIndex = users[uuid].testOrder.find(testIndex => !(users[uuid].passwords[testIndex].attempts < 3));
+        var passwordIndex = users[uuid].testOrder.find(testIndex =>
+            users[uuid].passwords[testIndex].attempts < 3 &&
+            !(users[uuid].passwords[testIndex].success)
+        );
         if (passwordIndex !== undefined) {
             var attempt = req.query.attempt;
             var matches = validateAttempt(attempt, users[uuid].passwords[passwordIndex].password);
-            users[uuid].passwords[passwordIndex].password.attempts++;
+            users[uuid].passwords[passwordIndex].attempts += 1;
             if (matches) {
-                users[uuid].passwords[passwordIndex].password.success = true;
+                users[uuid].passwords[passwordIndex].success = true;
             }
             res.send({
                 "matches": matches,
-                "attemptsRemaining": 3 - users[uuid].passwords[passwordIndex].password.attempts
+                "attemptsRemaining": 3 - users[uuid].passwords[passwordIndex].attempts
             });
         }
+    }
+});
+
+app.get('/thanks', (req, res) => {
+    var uuid = req.cookies.uuid;
+    if (!(uuid in users)) {
+        res.sendFile("index.html", { root: ROOT });
+    } else {
+        res.sendFile("thanks.html", { root: ROOT });
     }
 });
 
