@@ -40,12 +40,35 @@ app.get('/practice/next', (req, res) => {
         res.sendFile("restart.html", { root: ROOT });
     } else {
         var numPasswords = users[uuid].passwords.length;
-        if (numPasswords < 3) {
-            var newPassword = generatePassword(numPasswords);
-            users[uuid].passwords.push(newPassword);
-            res.send(newPassword);
+        var numTestedPasswords = users[uuid].passwords.filter(password => password.practiced).length;
+        if (numPasswords == numTestedPasswords) {
+            if (numPasswords == 3) {
+                res.send({ "readyToTest": true });
+            } else {
+                var newPassword = generatePassword(numPasswords);
+                users[uuid].passwords.push(newPassword);
+                res.send(newPassword);
+            }
         } else {
-            res.send({ "readyToTest": true});
+            res.send(users[uuid].passwords[numTestedPasswords]);
+        }
+    }
+});
+
+app.get('/practice/verify', (req, res) => {
+    var uuid = req.query.uuid;
+    if (!(uuid in users)) {
+        res.sendFile("restart.html", { root: ROOT });
+    } else {
+        var passwordIndex = users[uuid].passwords.indexOf(users[uuid].passwords.find(password => !password.practiced));
+        if (passwordIndex !== undefined) {
+            var attempt = req.query.attempt;
+            //TODO: check if attempt matches password
+            var matches = true;
+            if (matches) {
+                users[uuid].passwords[passwordIndex].practiced = true;
+            }
+            res.send({ "matches": matches });
         }
     }
 });
@@ -83,7 +106,7 @@ app.get('/test/verify', (req, res) => {
     } else {
         var attempt = req.query.attempt;
         //TODO: check if attempt matches password
-        var matches = false;
+        var matches = true;
         res.send({ "matches": matches});
     }
 });

@@ -15,8 +15,8 @@
 
 		</div>
 		<div>
-			<button id="testBtn" style="margin-left:20px" class="btn btn-secondary" onclick="test()">Test password</button>
-			<button id="nextBtn" style="margin-left:120px" class="btn btn-primary" onclick="next()" disabled>Next</button>
+			<button type="button" id="testBtn" style="margin-left:20px" class="btn btn-primary" onclick="test()">Test password</button>
+			<button type="button" id="nextBtn" style="margin-left:120px" class="btn btn-secondary" onclick="next()" disabled>Next</button>
 		</div>
     </div>
 
@@ -42,26 +42,42 @@
 
 		function next() {
             $.get("/practice/next?uuid=" + getCookie("uuid"), function(data, status) {
-                if (data.readyToTest === true) {
+                if (data.readyToTest) {
                     window.location.pathname = "test.html";
                 } else {
+                    resetButtonStates();
                     $("#passwordTitle").text(data.title);
                 }
             });
 		}
 
 		function test() {
-			if (true) {
-				$("#testBtn").removeClass("btn-secondary");
-				$("#testBtn").addClass("btn-success");
-				$("#nextBtn").prop("disabled", false);
+            $.get("/practice/verify?uuid=" + getCookie("uuid"), function(data, status) {
+                if (data.matches) {
+                    $("#testBtn").removeClass("btn-primary");
+                    $("#testBtn").removeClass("btn-danger");
+                    $("#testBtn").addClass("btn-secondary");
+                    $("#testBtn").prop("disabled", true);
 
-			}
-			else {
-				$("#testBtn").removeClass("btn-secondary")
-				$("#testBtn").addClass("btn-danger")
-			}
-		}
+                    $("#nextBtn").removeClass("btn-secondary");
+                    $("#nextBtn").addClass("btn-success");
+				    $("#nextBtn").prop("disabled", false);
+                } else {
+                    $("#testBtn").removeClass("btn-secondary")
+				    $("#testBtn").addClass("btn-danger")
+                }
+            });
+        }
+
+        function resetButtonStates() {
+            $("#testBtn").removeClass("btn-secondary");
+            $("#testBtn").addClass("btn-primary");
+            $("#testBtn").prop("disabled", false);
+
+            $("#nextBtn").removeClass("btn-success");
+            $("#nextBtn").addClass("btn-secondary");
+            $("#nextBtn").prop("disabled", true);
+        }
 	</script>
 
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
