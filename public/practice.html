@@ -25,35 +25,26 @@
 			next();
 		});
 
-		function getCookie(cname) {
-			var name = cname + "=";
-			var cookies = document.cookie.split(';');
-			for(var i = 0; i < cookies.length; i++) {
-				var c = cookies[i];
-				while (c.charAt(0) == ' ') {
-					c = c.substring(1);
-				}
-				if (c.indexOf(name) == 0) {
-					return c.substring(name.length, c.length);
-				}
-			}
-			return "";
-		}
-
 		function next() {
-            $.get("/practice/next?uuid=" + getCookie("uuid"), function(data, status) {
-                if (data.readyToTest) {
+            $.get("/practice/next", function(data, status) {
+                if (data.restart) {
+                    window.location.pathname = "restart.html";
+                } else if (data.readyToTest) {
                     window.location.pathname = "test.html";
                 } else {
-                    resetButtonStates();
+                    resetButtonStates()
                     $("#passwordTitle").text(data.title);
+                    //TODO: render data.password on the screen
                 }
             });
 		}
 
 		function test() {
-            $.get("/practice/verify?uuid=" + getCookie("uuid"), function(data, status) {
-                if (data.matches) {
+            var attempt = "ABCD";
+            $.get("/practice/verify?attempt=" + attempt, function(data, status) {
+                if (data.restart) {
+                    window.location.pathname = "restart.html";
+                } else if (data.matches) {
                     $("#testBtn").removeClass("btn-primary");
                     $("#testBtn").removeClass("btn-danger");
                     $("#testBtn").addClass("btn-secondary");

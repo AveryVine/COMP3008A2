@@ -17,9 +17,9 @@
 		function start() {
 			var uuid = new Date().getTime().toString();
 			uuid += "-" + Math.floor(Math.random()*1000)
-			document.cookie = "uuid=" + uuid + "; path=/; max-age=7200";
+            document.cookie = "uuid=" + uuid + "; path=/; max-age=7200";
 
-			window.location.href = "/practice?uuid=" + uuid;
+			window.location.href = "/practice";
 		}
 	</script>
 

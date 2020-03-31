@@ -1,13 +1,17 @@
 const express = require('express');
+const cookieParser = require("cookie-parser");
 const app = express();
 
 const ROOT = "public"
 
+var emoji = ["🙂", "🙁", "❤️", "😉", "😭", "👍", "👎", "😂", "🐶", "🐱", "🔥", "🌈", "⚽️", "🏀", "🏆", "🎹"];
 var passwordTitles = ["Email", "Banking", "Shopping"];
 var users = {};
 
 //receive a port, or select default port
 app.set('port', (process.env.PORT || 5000));
+
+app.use(cookieParser());
 
 //log each server request
 app.use(function (req, res, next) {
@@ -20,9 +24,9 @@ app.get("/", function (req, res) {
 });
 
 app.get('/practice', (req, res) => {
-    var uuid = req.query.uuid;
+    var uuid = req.cookies.uuid;
     if (uuid === undefined) {
-        res.sendFile("restart.html", { root: ROOT });
+        res.send({ "restart": true });
     } else {
         if (!(uuid in users)) {
             users[uuid] = {
@@ -35,13 +39,13 @@ app.get('/practice', (req, res) => {
 });
 
 app.get('/practice/next', (req, res) => {
-    var uuid = req.query.uuid;
+    var uuid = req.cookies.uuid;
     if (!(uuid in users)) {
-        res.sendFile("restart.html", { root: ROOT });
+        res.send({ "restart": true });
     } else {
         var numPasswords = users[uuid].passwords.length;
-        var numTestedPasswords = users[uuid].passwords.filter(password => password.practiced).length;
-        if (numPasswords == numTestedPasswords) {
+        var numPracticedPasswords = users[uuid].passwords.filter(password => password.practiced).length;
+        if (numPasswords == numPracticedPasswords) {
             if (numPasswords == 3) {
                 res.send({ "readyToTest": true });
             } else {
@@ -50,21 +54,20 @@ app.get('/practice/next', (req, res) => {
                 res.send(newPassword);
             }
         } else {
-            res.send(users[uuid].passwords[numTestedPasswords]);
+            res.send(users[uuid].passwords[numPracticedPasswords]);
         }
     }
 });
 
 app.get('/practice/verify', (req, res) => {
-    var uuid = req.query.uuid;
+    var uuid = req.cookies.uuid;
     if (!(uuid in users)) {
-        res.sendFile("restart.html", { root: ROOT });
+        res.send({ "restart": true });
     } else {
         var passwordIndex = users[uuid].passwords.indexOf(users[uuid].passwords.find(password => !password.practiced));
         if (passwordIndex !== undefined) {
             var attempt = req.query.attempt;
-            //TODO: check if attempt matches password
-            var matches = true;
+            var matches = validateAttempt(attempt, users[uuid].passwords[passwordIndex].password);
             if (matches) {
                 users[uuid].passwords[passwordIndex].practiced = true;
             }
@@ -74,22 +77,25 @@ app.get('/practice/verify', (req, res) => {
 });
 
 app.get('/test', (req, res) => {
-    var uuid = req.query.uuid;
+    var uuid = req.cookies.uuid;
     if (!(uuid in users)) {
-        res.sendFile("restart.html", { root: ROOT });
+        res.send({ "restart": true });
     } else {
         res.sendFile("test.html", { root: ROOT });
     }
 });
 
 app.get('/test/next', (req, res) => {
-    var uuid = req.query.uuid;
+    var uuid = req.cookies.uuid;
     if (!(uuid in users)) {
-        res.sendFile("restart.html", { root: ROOT });
+        res.send({ "restart": true });
     } else if (users[uuid].passwords.length < 3) {
         res.sendFile("practice.html", { root: ROOT });
     } else {
-        var passwordIndex = users[uuid].testOrder.find(testIndex => users[uuid].passwords[testIndex].tested === false);
+        var passwordIndex = users[uuid].testOrder.find(testIndex =>
+            users[uuid].passwords[testIndex].attempts < 3 &&
+            !(users[uuid].passwords[testIndex].success)
+        );
         if (passwordIndex !== undefined) {
             var passwordTitle = users[uuid].passwords[passwordIndex].title;
             res.send({ "title" : passwordTitle });
@@ -100,14 +106,23 @@ app.get('/test/next', (req, res) => {
 });
 
 app.get('/test/verify', (req, res) => {
-    var uuid = req.query.uuid;
+    var uuid = req.cookies.uuid;
     if (!(uuid in users)) {
-        res.sendFile("restart.html", { root: ROOT });
+        res.send({ "restart": true });
     } else {
-        var attempt = req.query.attempt;
-        //TODO: check if attempt matches password
-        var matches = true;
-        res.send({ "matches": matches});
+        var passwordIndex = users[uuid].testOrder.find(testIndex => !(users[uuid].passwords[testIndex].attempts < 3));
+        if (passwordIndex !== undefined) {
+            var attempt = req.query.attempt;
+            var matches = validateAttempt(attempt, users[uuid].passwords[passwordIndex].password);
+            users[uuid].passwords[passwordIndex].password.attempts++;
+            if (matches) {
+                users[uuid].passwords[passwordIndex].password.success = true;
+            }
+            res.send({
+                "matches": matches,
+                "attemptsRemaining": 3 - users[uuid].passwords[passwordIndex].password.attempts
+            });
+        }
     }
 });
 
@@ -124,23 +139,57 @@ app.listen(app.get('port'), function () {
 
 //generates a random order in which passwords will be served
 function generateTestOrder() {
-    var testIndices = [0, 1, 2];
-    var randomizedTestIndices = [];
-    var numLoops = testIndices.length;
-    for (var i = 0; i < numLoops; i++) {
-        var randomIndex = Math.floor(Math.random() * testIndices.length);
-        var randomTestIndex = testIndices.splice(randomIndex, 1)[0];
-        randomizedTestIndices.push(randomTestIndex);
+    var numIndices = 3;
+    var randomIndices = [];
+    while (randomIndices.length < numIndices) {
+        var randomIndex = Math.floor(Math.random() * numIndices);
+        if (!randomIndices.includes(randomIndex)) {
+            randomIndices.push(randomIndex);
+        }
     }
-    return randomizedTestIndices;
+    return randomIndices;
 }
 
 function generatePassword(titleIndex) {
     var title = passwordTitles[titleIndex];
-    //TODO: generate password
+    var passwordLength = 4;
+
+    var chosenIndices = [];
+    while (chosenIndices.length < passwordLength) {
+        var randomIndex = Math.floor(Math.random() * emoji.length);
+        if (!chosenIndices.includes(randomIndex)) {
+            chosenIndices.push(randomIndex);
+        }
+    }
+    chosenIndices.sort();
+
+    var chosenEmoji = [];
+    while (chosenEmoji.length < chosenIndices.length) {
+        var randomIndex = Math.floor(Math.random() * 16);
+        if (!chosenEmoji.includes(emoji[randomIndex])) {
+            chosenEmoji.push(emoji[randomIndex]);
+        }
+    }
+
     return {
         "title": title,
-        "password": undefined,
-        "tested": false
+        "password": {
+            "indices": chosenIndices,
+            "emoji": chosenEmoji
+        },
+        "attempts": 0,
+        "success": false
     }
+}
+
+function validateAttempt(attempt, password) {
+    var emojiNum = 0;
+    for (index in password.indices) {
+        if (attempt.charAt(index) !== password.emoji[emojiNum]) {
+            // return false;
+            console.log("Invalid password");
+        }
+        emojiNum++;
+    }
+    return true;
 }
