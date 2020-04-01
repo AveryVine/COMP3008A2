@@ -50,7 +50,7 @@ function prepareGrid(disabled) {
 }
 
 function disableGrid() {
-    grid.option("disabled", disabled);
+    grid.option("disabled", true);
     $(".grid-square").removeClass("draggable");
 }
 

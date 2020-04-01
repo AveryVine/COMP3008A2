@@ -99,7 +99,10 @@ app.get('/test/next', (req, res) => {
         );
         if (passwordIndex !== undefined) {
             var passwordTitle = users[uuid].passwords[passwordIndex].title;
-            res.send({ "title" : passwordTitle });
+            res.send({
+                "title": passwordTitle,
+                "emoji": emoji
+            });
         } else {
             res.send({ "finished": true });
         }
@@ -142,6 +145,15 @@ app.get('/thanks', (req, res) => {
 app.get('/emoji', (req, res) => {
     res.send({ "emoji": emoji });
 });
+
+app.get('/successes', (req, res) => {
+    var uuid = req.cookies.uuid;
+    if (!(uuid in users)) {
+        res.send({ "successes": 0 });
+    } else {
+        res.send({ "successes": users[uuid].passwords.filter(password => password.success).length })
+    }
+})
 
 app.get('/users', (req, res) => {
     res.send(users);

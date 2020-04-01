@@ -19,7 +19,7 @@
             There are 4 highlighted squares in the grid below. Each of them has an emoji inside. Try to memorize which squares are highlighted, and which emoji are inside. Remember, <b>ONLY</b> these four squares and what's inside them matter. None of the other squares matter.
         </p>
         <p>
-            Whenever you're ready, hit <span style="color: blue">Practice Password</span>. Replicate the password as best you can, then hit <span style="color: blue">Verify Password</span> to see if you got it right. Finally, when you've verified you know it, click <span style="color: green">Next Password</span>.
+            Whenever you're ready, hit <span style="color: blue">Practice Password</span>. Replicate the password as best you can, then hit <span style="color: blue">Verify Password</span> to see if you got it right. Finally, when you've verified you know it, click <span style="color: green">Next Step</span>.
         </p>
         <hr />
         <h3>Password: <span id="passwordTitle" style="color: orangered"></span></h3>
@@ -49,12 +49,12 @@
                 <div class="col interactions-group">
                     <div><button type="button" id="testBtn" class="btn" onclick="presentTest()">Practice Password</button></div>
                     <div><button type="button" id="verifyBtn" class="btn" onclick="verify()">Verify Password</button></div>
-                    <div><button type="button" id="nextBtn" class="btn" onclick="next()">Next Password</button></div>
+                    <div><button type="button" id="nextBtn" class="btn" onclick="next()">Next Step</button></div>
                     <div id="alert-correct" class="alert alert-success" role="alert" style="display: none">
-                        Great job! Click <span style="color: blue">Next Password</span> when you're ready.
+                        Great job! Click <span style="color: blue">Next Step</span> when you're ready.
                     </div>
                     <div id="alert-incorrect" class="alert alert-danger" role="alert" style="display: none">
-                        Wrong password! Take another look and try again.
+                        Incorrect password. Take another look and try again.
                     </div>
                 </div>
             </div>
@@ -63,7 +63,6 @@
 
 	<script>
 		$(document).ready(function() {
-            resetButtonStates();
 			next();
 		});
 
@@ -76,8 +75,8 @@
                 } else if (data.readyToTest) {
                     window.location.pathname = "/test";
                 } else {
-                    resetButtonStates()
                     $("#passwordTitle").text(data.title);
+                    toggleButtonsEnabled(true, false, false);
                     renderGridSolution(data.password);
                 }
             });
@@ -85,18 +84,10 @@
 
 		function presentTest() {
             $.get("/emoji", function(data, status) {
-                renderGrid(data.emoji);
-
-                $("#testBtn").removeClass("btn-primary");
-                $("#testBtn").addClass("btn-secondary");
-                $("#testBtn").prop("disabled", true);
-
-                $("#verifyBtn").removeClass("btn-secondary");
-                $("#verifyBtn").addClass("btn-primary");
-                $("#verifyBtn").prop("disabled", false);
-
                 $("#alert-correct").css("display", "none");
                 $("#alert-incorrect").css("display", "none");
+                renderGrid(data.emoji);
+                toggleButtonsEnabled(false, true, false);
             })
         }
 
@@ -106,43 +97,29 @@
                 if (data.restart) {
                     window.location.pathname = "/";
                 } else if (data.matches) {
-                    $("#verifyBtn").removeClass("btn-primary");
-                    $("#verifyBtn").addClass("btn-secondary");
-                    $("#verifyBtn").prop("disabled", true);
-
-                    $("#nextBtn").removeClass("btn-secondary");
-                    $("#nextBtn").addClass("btn-success");
-                    $("#nextBtn").prop("disabled", false);
-
                     $("#alert-correct").css("display", "block");
+                    toggleButtonsEnabled(false, false, true);
                     disableGrid();
                 } else {
-                    $("#testBtn").removeClass("btn-secondary");
-                    $("#testBtn").addClass("btn-primary");
-                    $("#testBtn").prop("disabled", false);
-
-                    $("#verifyBtn").removeClass("btn-primary")
-                    $("#verifyBtn").addClass("btn-secondary")
-                    $("#verifyBtn").prop("disabled", true);
-
                     next();
                     $("#alert-incorrect").css("display", "block");
+                    toggleButtonsEnabled(true, false, false);
                 }
             });
         }
 
-        function resetButtonStates() {
-            $("#testBtn").removeClass("btn-secondary");
-            $("#testBtn").addClass("btn-primary");
-            $("#testBtn").prop("disabled", false);
+        function toggleButtonsEnabled(testBtn, verifyBtn, nextBtn) {
+            $("#testBtn").removeClass(testBtn ? "btn-secondary" : "btn-primary");
+            $("#testBtn").addClass(testBtn ? "btn-primary" : "btn-secondary");
+            $("#testBtn").prop("disabled", !testBtn);
 
-            $("#verifyBtn").removeClass("btn-primary");
-            $("#verifyBtn").addClass("btn-secondary");
-            $("#verifyBtn").prop("disabled", true);
+            $("#verifyBtn").removeClass(verifyBtn ? "btn-secondary" : "btn-primary");
+            $("#verifyBtn").addClass(verifyBtn ? "btn-primary" : "btn-secondary");
+            $("#verifyBtn").prop("disabled", !verifyBtn);
 
-            $("#nextBtn").removeClass("btn-success");
-            $("#nextBtn").addClass("btn-secondary");
-            $("#nextBtn").prop("disabled", true);
+            $("#nextBtn").removeClass(nextBtn ? "btn-secondary" : "btn-success");
+            $("#nextBtn").addClass(nextBtn ? "btn-success" : "btn-secondary");
+            $("#nextBtn").prop("disabled", !nextBtn);
         }
 	</script>
 

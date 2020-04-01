@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
+    <link rel="stylesheet" href="gridStyles.css">
+    <script src="gridScripts.js"></script>
 
 	<title>Test - COMP3008 Password Scheme</title>
 </head>
@@ -12,18 +15,49 @@
     <div class="container", style="margin-top: 50px">
         <h1>Test Entering Passwords</h1>
         <hr />
+        <p>
+            Enter your password in the grid below. When you're ready, hit <span style="color: blue">Log In</span>.
+        </p>
+        <hr />
         <h3>Password: <span class="passwordTitle" style="color: orangered"></span></h3>
         <hr />
-        <p>Enter your password in the grid below. When you're ready, hit <span style="color: blue">Log In</span>.</p>
-        <hr />
-        <div id="grid">
-            <h4 class="passwordTitle" style="color: orangered"></h4>
-            <p style="color: grey; margin-top: 100px; margin-bottom: 100px">GRID HERE</p>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <div id="sortablelist">
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                    </div>
+                </div>
+                <div class="col interactions-group">
+                    <div><button type="button" id="testBtn" class="btn" onclick="verify()">Log In</button></div>
+			        <div><button type="button" id="nextBtn" class="btn" onclick="next()">Next Step</button></div>
+                    <div id="alert-correct" class="alert alert-success" role="alert" style="display: none">
+                        Great job! Click <span style="color: blue">Next Step</span> when you're ready.
+                    </div>
+                    <div id="alert-incorrect" class="alert alert-danger" role="alert" style="display: none">
+                        Incorrect password. Give it another shot. (Attempts remaining: <span id="attempts-remaining">3</span>)
+                    </div>
+                    <div id="alert-out-of-attempts" class="alert alert-danger" role="alert" style="display: none">
+                        Incorrect password. You have no attempts remaining. Click <span style="color: green">Next Step</span> to move on.
+                    </div>
+                </div>
+            </div>
         </div>
-		<div>
-			<button type="button" id="testBtn" class="btn btn-primary" onclick="verify()">Log In</button>
-			<button type="button" id="nextBtn" style="margin-left:120px" class="btn btn-secondary" onclick="next()" disabled>Next Password</button>
-		</div>
     </div>
 
 	<script>
@@ -32,48 +66,55 @@
 		});
 
 		function next() {
+            $("#alert-correct").css("display", "none");
+            $("#alert-incorrect").css("display", "none");
+            $("#alert-out-of-attempts").css("display", "none");
+
             $.get("/test/next", function(data, status) {
                 if (data.restart) {
                     window.location.pathname = "/";
                 } else if (data.finished) {
                     window.location.pathname = "/thanks";
                 } else {
-                    resetButtonStates()
                     $(".passwordTitle").text(data.title);
-                    //TODO: render data.password on the screen, in the #grid div
+                    toggleButtonsEnabled(true, false);
+                    renderGrid(data.emoji);
                 }
             });
 		}
 
         function verify() {
-            var attempt = "ABCD";
+            $("#alert-correct").css("display", "none");
+            $("#alert-incorrect").css("display", "none");
+            $("#alert-out-of-attempts").css("display", "none");
+
+            var attempt = readGrid();
             $.get("/test/verify?attempt=" + attempt, function(data, status) {
                 if (data.restart) {
                     window.location.pathname = "/";
                 } else if (data.matches) {
-                    $("#testBtn").removeClass("btn-primary");
-                    $("#testBtn").removeClass("btn-danger");
-                    $("#testBtn").addClass("btn-secondary");
-                    $("#testBtn").prop("disabled", true);
-
-                    $("#nextBtn").removeClass("btn-secondary");
-                    $("#nextBtn").addClass("btn-success");
-				    $("#nextBtn").prop("disabled", false);
+                    $("#alert-correct").css("display", "block");
+                    toggleButtonsEnabled(false, true);
+                } else if (data.attemptsRemaining > 0) {
+                    $("#alert-incorrect").css("display", "block");
+                    $("#attempts-remaining").text(data.attemptsRemaining);
+                    toggleButtonsEnabled(true, false);
                 } else {
-                    $("#testBtn").removeClass("btn-secondary")
-				    $("#testBtn").addClass("btn-danger")
+                    $("#alert-out-of-attempts").css("display", "block");
+                    toggleButtonsEnabled(false, true);
+                    disableGrid();
                 }
             });
         }
 
-        function resetButtonStates() {
-            $("#testBtn").removeClass("btn-secondary");
-            $("#testBtn").addClass("btn-primary");
-            $("#testBtn").prop("disabled", false);
+        function toggleButtonsEnabled(testBtn, nextBtn) {
+            $("#testBtn").removeClass(testBtn ? "btn-secondary" : "btn-primary");
+            $("#testBtn").addClass(testBtn ? "btn-primary" : "btn-secondary");
+            $("#testBtn").prop("disabled", !testBtn);
 
-            $("#nextBtn").removeClass("btn-success");
-            $("#nextBtn").addClass("btn-secondary");
-            $("#nextBtn").prop("disabled", true);
+            $("#nextBtn").removeClass(nextBtn ? "btn-secondary" : "btn-success");
+            $("#nextBtn").addClass(nextBtn ? "btn-success" : "btn-secondary");
+            $("#nextBtn").prop("disabled", !nextBtn);
         }
 	</script>
 
