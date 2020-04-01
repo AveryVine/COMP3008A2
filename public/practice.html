@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
+    <link rel="stylesheet" href="gridStyles.css">
+    <script src="gridScripts.js"></script>
 
 	<title>Practice - COMP3008 Password Scheme</title>
 </head>
@@ -12,20 +15,50 @@
     <div class="container", style="margin-top: 50px">
         <h1>Practice Entering Passwords</h1>
         <hr />
-        <h3>Password: <span class="passwordTitle" style="color: orangered"></span></h3>
+        <p>
+            There are 4 highlighted squares in the grid below. Each of them has an emoji inside. Try to memorize which squares are highlighted, and which emoji are inside. Remember, <b>ONLY</b> these four squares and what's inside them matter. None of the other squares matter.
+        </p>
+        <p>
+            Whenever you're ready, hit <span style="color: blue">Practice Password</span>. Replicate the password as best you can, then hit <span style="color: blue">Verify Password</span> to see if you got it right. Finally, when you've verified you know it, click <span style="color: green">Next Password</span>.
+        </p>
         <hr />
-        <p>There are 4 highlighted squares in the grid below. Each of them has an emoji inside. Try to memorize which squares are highlighted, and which emoji are inside. Remember, <b>ONLY</b> these four squares and what's inside them matter. None of the other squares matter.</p>
-        <p>Whenever you're ready, hit <span style="color: blue">Practice Password</span>. Replicate the password as best you can, then hit <span style="color: blue">Verify Password</span> to see if you got it right. Finally, when you've verified you know it, click <span style="color: green">Next Password</span>.</p>
+        <h3>Password: <span id="passwordTitle" style="color: orangered"></span></h3>
         <hr />
-        <div id="grid">
-            <h4 class="passwordTitle" style="color: orangered"></h4>
-            <p style="color: grey; margin-top: 100px; margin-bottom: 100px">GRID HERE</p>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <div id="sortablelist">
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                        <div class="grid-square"></div>
+                    </div>
+                </div>
+                <div class="col interactions-group">
+                    <div><button type="button" id="testBtn" class="btn" onclick="presentTest()">Practice Password</button></div>
+                    <div><button type="button" id="verifyBtn" class="btn" onclick="verify()">Verify Password</button></div>
+                    <div><button type="button" id="nextBtn" class="btn" onclick="next()">Next Password</button></div>
+                    <div id="alert-correct" class="alert alert-success" role="alert" style="display: none">
+                        Great job! Click <span style="color: blue">Next Password</span> when you're ready.
+                    </div>
+                    <div id="alert-incorrect" class="alert alert-danger" role="alert" style="display: none">
+                        Wrong password! Take another look and try again.
+                    </div>
+                </div>
+            </div>
         </div>
-		<div>
-            <button type="button" id="testBtn" class="btn" onclick="presentTest()">Practice Password</button>
-            <button type="button" id="verifyBtn" class="btn" onclick="verify()" style="margin-left:120px">Verify Password</button>
-			<button type="button" id="nextBtn" class="btn" onclick="next()" style="margin-left:120px">Next Password</button>
-		</div>
     </div>
 
 	<script>
@@ -35,6 +68,8 @@
 		});
 
 		function next() {
+            $("#alert-correct").css("display", "none");
+            $("#alert-incorrect").css("display", "none");
             $.get("/practice/next", function(data, status) {
                 if (data.restart) {
                     window.location.pathname = "/";
@@ -42,40 +77,56 @@
                     window.location.pathname = "/test";
                 } else {
                     resetButtonStates()
-                    $(".passwordTitle").text(data.title);
-                    //TODO: render data.password on the screen, in the #grid div
+                    $("#passwordTitle").text(data.title);
+                    renderGridSolution(data.password);
                 }
             });
 		}
 
 		function presentTest() {
-            $("#testBtn").removeClass("btn-primary");
-            $("#testBtn").addClass("btn-secondary");
-            $("#testBtn").prop("disabled", true);
+            $.get("/emoji", function(data, status) {
+                renderGrid(data.emoji);
 
-            $("#verifyBtn").removeClass("btn-secondary");
-            $("#verifyBtn").addClass("btn-primary");
-            $("#verifyBtn").prop("disabled", false);
+                $("#testBtn").removeClass("btn-primary");
+                $("#testBtn").addClass("btn-secondary");
+                $("#testBtn").prop("disabled", true);
+
+                $("#verifyBtn").removeClass("btn-secondary");
+                $("#verifyBtn").addClass("btn-primary");
+                $("#verifyBtn").prop("disabled", false);
+
+                $("#alert-correct").css("display", "none");
+                $("#alert-incorrect").css("display", "none");
+            })
         }
 
         function verify() {
-            var attempt = "ABCD";
+            var attempt = readGrid();
             $.get("/practice/verify?attempt=" + attempt, function(data, status) {
                 if (data.restart) {
                     window.location.pathname = "/";
                 } else if (data.matches) {
                     $("#verifyBtn").removeClass("btn-primary");
-                    $("#verifyBtn").removeClass("btn-danger");
                     $("#verifyBtn").addClass("btn-secondary");
                     $("#verifyBtn").prop("disabled", true);
 
                     $("#nextBtn").removeClass("btn-secondary");
                     $("#nextBtn").addClass("btn-success");
-				    $("#nextBtn").prop("disabled", false);
+                    $("#nextBtn").prop("disabled", false);
+
+                    $("#alert-correct").css("display", "block");
+                    disableGrid();
                 } else {
+                    $("#testBtn").removeClass("btn-secondary");
+                    $("#testBtn").addClass("btn-primary");
+                    $("#testBtn").prop("disabled", false);
+
                     $("#verifyBtn").removeClass("btn-primary")
-                    $("#verifyBtn").removeClass("btn-secondary")
-				    $("#verifyBtn").addClass("btn-danger")
+                    $("#verifyBtn").addClass("btn-secondary")
+                    $("#verifyBtn").prop("disabled", true);
+
+                    next();
+                    $("#alert-incorrect").css("display", "block");
                 }
             });
         }

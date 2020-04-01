@@ -1,5 +1,6 @@
 const express = require('express');
-const cookieParser = require("cookie-parser");
+const CookieParser = require("cookie-parser");
+const GraphemeSplitter = require('grapheme-splitter')
 const app = express();
 
 const ROOT = "public"
@@ -11,7 +12,7 @@ var users = {};
 //receive a port, or select default port
 app.set('port', (process.env.PORT || 5000));
 
-app.use(cookieParser());
+app.use(CookieParser());
 
 //log each server request
 app.use(function (req, res, next) {
@@ -138,6 +139,10 @@ app.get('/thanks', (req, res) => {
     }
 });
 
+app.get('/emoji', (req, res) => {
+    res.send({ "emoji": emoji });
+});
+
 app.get('/users', (req, res) => {
     res.send(users);
 });
@@ -187,19 +192,21 @@ function generatePassword(titleIndex) {
         "title": title,
         "password": {
             "indices": chosenIndices,
-            "emoji": chosenEmoji
+            "chosenEmoji": chosenEmoji,
+            "possibleEmoji": emoji
         },
         "attempts": 0,
         "success": false
     }
 }
 
-function validateAttempt(attempt, password) {
+function validateAttempt(attemptString, password) {
+    var splitter = new GraphemeSplitter();
+    var attempt = splitter.splitGraphemes(attemptString);
     var emojiNum = 0;
     for (index in password.indices) {
-        if (attempt.charAt(index) !== password.emoji[emojiNum]) {
-            // return false;
-            console.log("Invalid password");
+        if (attempt[password.indices[index]] !== password.chosenEmoji[emojiNum]) {
+            return false;
         }
         emojiNum++;
     }

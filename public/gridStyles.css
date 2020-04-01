@@ -1,0 +1,41 @@
+#sortablelist {
+    width: 400px;
+    height: 400px;
+}
+
+.grid-square {
+    width: 75px;
+    height: 75px;
+    margin: 10px;
+    float: left;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 75px;
+    font-size: 30px;
+    cursor: default;
+    background-color: beige;
+    border: 1px solid black;
+
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.draggable {
+    cursor: grab;
+}
+
+.highlight {
+    background-color: lightblue;
+}
+
+.btn {
+    margin-bottom: 20px;
+}
+
+.interactions-group {
+    margin-top: 10px;
+}
