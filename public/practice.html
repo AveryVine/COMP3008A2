@@ -83,11 +83,16 @@
 		}
 
 		function presentTest() {
-            $.get("/emoji", function(data, status) {
-                $("#alert-correct").css("display", "none");
-                $("#alert-incorrect").css("display", "none");
-                renderGrid(data.emoji);
-                toggleButtonsEnabled(false, true, false);
+            $("#alert-correct").css("display", "none");
+            $("#alert-incorrect").css("display", "none");
+            toggleButtonsEnabled(false, true, false);
+
+            $.get("/emoji?ispractice=true", function(data, status) {
+                if (data.restart) {
+                    window.location.pathname = "/";
+                } else {
+                    renderGrid(data.emoji);
+                }
             })
         }
 

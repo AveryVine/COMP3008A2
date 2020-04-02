@@ -1,9 +1,10 @@
 const express = require('express');
 const CookieParser = require("cookie-parser");
 const GraphemeSplitter = require('grapheme-splitter')
+const log = new (require('./logger.js')).Logger();
 const app = express();
 
-const ROOT = "public"
+const ROOT = "public";
 
 var emoji = ["🙂", "🙁", "❤️", "😉", "😭", "👍", "👎", "😂", "🐶", "🐱", "🔥", "🌈", "⚽️", "🏀", "🏆", "🎹"];
 var passwordTitles = ["Email", "Banking", "Shopping"];
@@ -27,15 +28,19 @@ app.get("/", function (req, res) {
 app.get('/practice', (req, res) => {
     var uuid = req.cookies.uuid;
     if (uuid === undefined) {
-        res.sendFile("index.html", { root: ROOT })
+        res.sendFile("index.html", { root: ROOT });
     } else {
         if (!(uuid in users)) {
             users[uuid] = {
                 "passwords": [],
-                "testOrder": generateTestOrder()
+                "testOrder": generateTestOrder(),
+                "analytics": {
+
+                }
             }
+            log.newSession(uuid);
         }
-        res.sendFile("practice.html", { root: ROOT })
+        res.sendFile("practice.html", { root: ROOT });
     }
 });
 
@@ -53,6 +58,7 @@ app.get('/practice/next', (req, res) => {
                 var newPassword = generatePassword(numPasswords);
                 users[uuid].passwords.push(newPassword);
                 res.send(newPassword);
+                log.passwordCreated(uuid)
             }
         } else {
             res.send(users[uuid].passwords[numPracticedPasswords]);
@@ -72,6 +78,7 @@ app.get('/practice/verify', (req, res) => {
             if (matches) {
                 users[uuid].passwords[passwordIndex].practiced = true;
             }
+            log.practiceLogin(uuid, matches);
             res.send({ "matches": matches });
         }
     }
@@ -99,10 +106,7 @@ app.get('/test/next', (req, res) => {
         );
         if (passwordIndex !== undefined) {
             var passwordTitle = users[uuid].passwords[passwordIndex].title;
-            res.send({
-                "title": passwordTitle,
-                "emoji": emoji
-            });
+            res.send({ "title": passwordTitle });
         } else {
             res.send({ "finished": true });
         }
@@ -122,8 +126,12 @@ app.get('/test/verify', (req, res) => {
             var attempt = req.query.attempt;
             var matches = validateAttempt(attempt, users[uuid].passwords[passwordIndex].password);
             users[uuid].passwords[passwordIndex].attempts += 1;
+            log.testLogin(uuid, matches);
             if (matches) {
                 users[uuid].passwords[passwordIndex].success = true;
+                log.testComplete(uuid, true);
+            } else if (users[uuid].passwords[passwordIndex].attempts == 3) {
+                log.testComplete(uuid, false);
             }
             res.send({
                 "matches": matches,
@@ -138,12 +146,23 @@ app.get('/thanks', (req, res) => {
     if (!(uuid in users)) {
         res.sendFile("index.html", { root: ROOT });
     } else {
+        log.endSession(uuid);
         res.sendFile("thanks.html", { root: ROOT });
     }
 });
 
 app.get('/emoji', (req, res) => {
-    res.send({ "emoji": emoji });
+    var uuid = req.cookies.uuid;
+    if (!(uuid in users)) {
+        res.send({ "restart": true });
+    } else {
+        if (req.query.isPractice) {
+            log.practiceStart(uuid);
+        } else {
+            log.testStart(uuid);
+        }
+        res.send({ "emoji": emoji });
+    }
 });
 
 app.get('/successes', (req, res) => {
@@ -163,7 +182,7 @@ app.use(express.static(ROOT));
 
 //start listening on the selected port
 app.listen(app.get('port'), function () {
-	console.log('Server listening on port', app.get('port'));
+    console.log('Server listening on port', app.get('port'));
 });
 
 //generates a random order in which passwords will be served
@@ -207,6 +226,7 @@ function generatePassword(titleIndex) {
             "chosenEmoji": chosenEmoji,
             "possibleEmoji": emoji
         },
+        "practiced": false,
         "attempts": 0,
         "success": false
     }

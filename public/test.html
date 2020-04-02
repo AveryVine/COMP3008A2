@@ -78,7 +78,14 @@
                 } else {
                     $(".passwordTitle").text(data.title);
                     toggleButtonsEnabled(true, false);
-                    renderGrid(data.emoji);
+
+                    $.get("/emoji?ispractice=false", function(data, status) {
+                        if (data.restart) {
+                            window.location.pathname = "/";
+                        } else {
+                            renderGrid(data.emoji);
+                        }
+                    });
                 }
             });
 		}
