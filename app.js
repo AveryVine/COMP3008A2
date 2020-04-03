@@ -146,7 +146,7 @@ app.get('/thanks', (req, res) => {
     if (!(uuid in users)) {
         res.sendFile("index.html", { root: ROOT });
     } else {
-        log.endSession(uuid);
+        log.endSession(uuid, users[uuid].passwords.filter(password => password.success).length);
         res.sendFile("thanks.html", { root: ROOT });
     }
 });

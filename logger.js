@@ -40,13 +40,19 @@ class Logger {
         this.log(uuid, "enter", success ? "success" : "failure");
     }
 
-    endSession(uuid) {
-        this.log(uuid, "admin", "endSession");
+    endSession(uuid, successes) {
+        this.log(uuid, "admin", "endSession", successes);
     }
 
-    log(uuid, category, action) {
+    log(uuid, category, action, details) {
         var timestamp = (new Date()).toISOString();
-        var message = timestamp + "," + uuid + "," + category + "," + action + "\n";
+        var message = timestamp + "," + uuid + "," + category + "," + action;
+		if (details != undefined) {
+			message +=  "," + details + "\n";
+		}
+		else {
+			message += "\n";
+		}
         this.fs.appendFile(this.filepath, message, (err) => {
             if (err) throw err;
         });

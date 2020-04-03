@@ -22,7 +22,7 @@
 			Remember, <b>ONLY</b> these 4 squares and what's inside them matter. The emoji are not tied to the squares.
 		</p>
         <p>
-            Whenever you're ready, hit <span style="color: blue">Practice Password</span>. Place memorized emojis in the 4 squares, then hit <span style="color: blue">Verify Password</span> to see if you got it right.
+            Whenever you're ready, hit <span style="color: blue">Practice Password</span>. Drag memorized emoji in the 4 squares, then hit <span style="color: blue">Verify Password</span> to see if you got it right.
         </p>
 		<p>
 			Finally, when you've verified you know it, click <span style="color: green">Next Step</span>.
@@ -93,7 +93,7 @@
             $("#alert-incorrect").css("display", "none");
             toggleButtonsEnabled(false, true, false);
 
-            $.get("/emoji?ispractice=true", function(data, status) {
+            $.get("/emoji?isPractice=true", function(data, status) {
                 if (data.restart) {
                     window.location.pathname = "/";
                 } else {
