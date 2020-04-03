@@ -235,12 +235,11 @@ function generatePassword(titleIndex) {
 function validateAttempt(attemptString, password) {
     var splitter = new GraphemeSplitter();
     var attempt = splitter.splitGraphemes(attemptString);
-    var emojiNum = 0;
+
     for (index in password.indices) {
-        if (attempt[password.indices[index]] !== password.chosenEmoji[emojiNum]) {
+        if (!password.chosenEmoji.includes(attempt[password.indices[index]])) {
             return false;
         }
-        emojiNum++;
     }
     return true;
 }
